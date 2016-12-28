@@ -191,7 +191,26 @@
     
 }
 
-
+-(void)peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
+    if (error) {
+        NSLog(@"ERROR: readRSSI failed, retrying. %@", error.description);
+        
+        if (peripheral.state == CBPeripheralStateConnected) {
+            NSArray *args = @[peripheral];
+            [self performSelector:@selector(performUpdateRSSI:) withObject:args afterDelay:2.0];
+        }
+        
+        return;
+    }
+    
+    self.rssiButton.title = [NSString stringWithFormat:@"%@ db", peripheral.RSSI];
+    
+    DEACentralManager *centralManager = [DEACentralManager sharedService];
+    YMSCBPeripheral *yp = [centralManager findPeripheral:peripheral];
+    
+    NSArray *args = @[peripheral];
+    [self performSelector:@selector(performUpdateRSSI:) withObject:args afterDelay:yp.rssiPingPeriod];
+}
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
     //NSLog(@"HEY got here");
