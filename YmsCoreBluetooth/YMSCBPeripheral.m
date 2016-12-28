@@ -486,7 +486,21 @@
     });
 }
 
-
+/**
+ CBPeripheralDelegate implementation.
+ 
+ @param peripheral The peripheral providing this information.
+ @param error If an error occured, the cause of the failure.
+ */
+-(void)peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error
+{
+    __weak YMSCBPeripheral *this = self;
+    _YMS_PERFORM_ON_MAIN_THREAD(^{
+        if ([this.delegate respondsToSelector:@selector(peripheral:didReadRSSI:error:)]) {
+            [this.delegate peripheral:peripheral didReadRSSI:RSSI error:error];
+        }
+    });
+}
 
 /**
  CBPeripheralDelegate implementation. Not yet supported.

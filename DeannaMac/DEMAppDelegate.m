@@ -244,8 +244,6 @@
 
 #pragma mark - CBPeripheralDelegate Methods
 
-#pragma mark - CBPeripheralDelegate Methods
-
 - (void)performUpdateRSSI:(NSArray *)args {
     CBPeripheral *peripheral = args[0];
     
@@ -253,6 +251,34 @@
     
 }
 
+-(void)peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
+    if (error) {
+        NSLog(@"ERROR: readRSSI failed, retrying. %@", error.description);
+        
+        if (peripheral.isConnected) {
+            NSArray *args = @[peripheral];
+            [self performSelector:@selector(performUpdateRSSI:) withObject:args afterDelay:2.0];
+        }
+        
+        return;
+    }
+    
+    DEACentralManager *centralManager = [DEACentralManager sharedService];
+    __weak DEASensorTag *sensorTag = (DEASensorTag *)[centralManager findPeripheral:peripheral];
+    
+    [self.peripheralTableView enumerateAvailableRowViewsUsingBlock:^(NSTableRowView *rowView, NSInteger row) {
+        
+        DEMPeripheralViewCell *pvc = [rowView viewAtColumn:0];
+        
+        if (pvc.sensorTag == sensorTag) {
+            pvc.rssiLabel.stringValue = [NSString stringWithFormat:@"%d", [sensorTag.cbPeripheral.RSSI intValue]];
+        }
+        
+    }];
+    
+    NSArray *args = @[peripheral];
+    [self performSelector:@selector(performUpdateRSSI:) withObject:args afterDelay:sensorTag.rssiPingPeriod];
+}
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error {
     
@@ -267,7 +293,6 @@
         return;
     }
     
-
     DEACentralManager *centralManager = [DEACentralManager sharedService];
     __weak DEASensorTag *sensorTag = (DEASensorTag *)[centralManager findPeripheral:peripheral];
     
@@ -280,13 +305,9 @@
         }
         
     }];
-
-
        
     NSArray *args = @[peripheral];
     [self performSelector:@selector(performUpdateRSSI:) withObject:args afterDelay:sensorTag.rssiPingPeriod];
 }
-
-
 
 @end
